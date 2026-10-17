@@ -97,14 +97,19 @@ spec:
           mountPath: /var/lib/postgresql/data
         readinessProbe:
           exec:
-            command: ["pg_isready", "-U", "postgres", "-d", "products"]
-          initialDelaySeconds: 5
-          periodSeconds: 5
+            # Not pg_isready: that reports the server is accepting connections even
+            # when the database itself was never created, which hides a half-finished
+            # initdb behind a Ready pod.
+            command: ["psql", "-U", "postgres", "-d", "products", "-c", "SELECT 1"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
         livenessProbe:
           exec:
-            command: ["pg_isready", "-U", "postgres", "-d", "products"]
-          initialDelaySeconds: 30
+            command: ["pg_isready", "-U", "postgres"]
+          initialDelaySeconds: 60
           periodSeconds: 20
+          timeoutSeconds: 5
         resources:
           requests:
             cpu: 100m

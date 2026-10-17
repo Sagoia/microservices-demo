@@ -19,6 +19,10 @@ metadata:
   labels:
     app: shoppingassistantservice
 spec:
+  # Stated explicitly so that re-applying this manifest restores the Deployment after
+  # something (a skaffold teardown, a manual scale) left it at zero replicas: kubectl
+  # apply cannot reset a field the manifest does not carry.
+  replicas: 1
   selector:
     matchLabels:
       app: shoppingassistantservice
@@ -60,6 +64,10 @@ spec:
           value: "gemma4:latest"
         - name: EMBEDDING_MODEL
           value: "embeddinggemma:latest"
+        # The reply ends with the [productID] markers the frontend turns into product
+        # cards, so the limit has to leave room for them after the prose.
+        - name: LLM_NUM_PREDICT
+          value: "1024"
         # --- Vector store ------------------------------------------------------------
         - name: PGVECTOR_HOST
           value: "pgvector"

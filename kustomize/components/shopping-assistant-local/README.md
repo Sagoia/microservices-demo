@@ -75,7 +75,7 @@ Set on the `shoppingassistantservice` Deployment:
 | `OLLAMA_BASE_URL` | `http://192.168.86.62:11434` | |
 | `LLM_MODEL` | `gemma4:latest` | must support vision |
 | `EMBEDDING_MODEL` | `embeddinggemma:latest` | |
-| `LLM_NUM_PREDICT` / `LLM_NUM_CTX` | `512` / `8192` | Ollama generation limits |
+| `LLM_NUM_PREDICT` / `LLM_NUM_CTX` | `1024` / `8192` | Generation limits. Too low a value truncates the answer before the trailing `[productID]` list the frontend parses. |
 | `OLLAMA_REASONING` | `false` | `true` enables thinking; `unset` leaves it to the model |
 | `PGVECTOR_HOST` / `_PORT` / `_DATABASE` / `_USER` | `pgvector` / `5432` / `products` / `postgres` | |
 | `PGVECTOR_PASSWORD` | from the `pgvector-credentials` Secret | |

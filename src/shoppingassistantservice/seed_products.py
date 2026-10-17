@@ -64,7 +64,11 @@ def to_documents(products):
     """
     texts, metadatas, ids = [], [], []
     for product in products:
-        texts.append(product["description"])
+        # The name is embedded along with the description. Several catalog descriptions
+        # never mention what the product actually is ("A neat addition to your summer
+        # wardrobe"), so embedding the description alone loses the one word that matters
+        # most for retrieval.
+        texts.append(f"{product['name']}. {product['description']}")
         metadatas.append(
             {
                 "id": product["id"],
@@ -107,6 +111,23 @@ def existing_collection_metadata(engine, collection):
     if row is None:
         return None
     return row[0] or {}
+
+
+def record_collection_metadata(engine, collection, metadata):
+    """Store which embedding model produced these vectors.
+
+    get_or_create_collection() only writes cmetadata when it creates the collection, and
+    the service may well have created an empty one before the first seeding run, so the
+    record is written here instead of relying on that.
+    """
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "UPDATE langchain_pg_collection SET cmetadata = CAST(:metadata AS json) "
+                "WHERE name = :name"
+            ),
+            {"metadata": json.dumps(metadata), "name": collection},
+        )
 
 
 def count_rows(engine, collection):
@@ -173,6 +194,7 @@ def main(argv):
     add_started = time.monotonic()
     vectorstore.add_texts(texts=texts, metadatas=metadatas, ids=ids)
     print(f"Upserted {len(ids)} products in {time.monotonic() - add_started:.1f}s")
+    record_collection_metadata(engine, collection, desired)
     print(f"Collection {collection!r} now holds {count_rows(engine, collection)} rows")
 
     sample = vectorstore.similarity_search("something comfortable for a cozy living room", k=3)

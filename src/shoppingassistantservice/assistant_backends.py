@@ -99,7 +99,7 @@ def get_chat_model():
             "model": model,
             "base_url": _env("OLLAMA_BASE_URL", DEFAULT_OLLAMA_BASE_URL),
             "temperature": float(_env("LLM_TEMPERATURE", "0.2")),
-            "num_predict": _int_env("LLM_NUM_PREDICT", 512),
+            "num_predict": _int_env("LLM_NUM_PREDICT", 1024),
             "num_ctx": _int_env("LLM_NUM_CTX", 8192),
         }
         # gemma4 advertises a "thinking" mode. It costs latency and the answers here are
@@ -121,7 +121,7 @@ def get_chat_model():
             base_url=_env("OPENAI_BASE_URL"),
             api_key=_env("OPENAI_API_KEY", "not-needed"),
             temperature=float(_env("LLM_TEMPERATURE", "0.2")),
-            max_tokens=_int_env("LLM_NUM_PREDICT", 512),
+            max_tokens=_int_env("LLM_NUM_PREDICT", 1024),
         )
 
     if backend == "google":
