@@ -1,0 +1,133 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Postgres with the pgvector extension, standing in for AlloyDB as the vector store
+# for the shopping assistant. This is a single-replica demo database, not an HA setup.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pgvector-credentials
+  labels:
+    app: pgvector
+type: Opaque
+stringData:
+  # Local-only demo credential: the database is reachable on the cluster network and
+  # nowhere else. Change it (and re-run the seeder) before using this anywhere real.
+  password: onlineboutique-pgvector
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pgvector-data
+  labels:
+    app: pgvector
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgvector
+  labels:
+    app: pgvector
+spec:
+  replicas: 1
+  strategy:
+    # The PVC is ReadWriteOnce, so the old pod has to release it before the new one starts.
+    type: Recreate
+  selector:
+    matchLabels:
+      app: pgvector
+  template:
+    metadata:
+      labels:
+        app: pgvector
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        # The postgres image runs as uid/gid 999; fsGroup makes the mounted volume
+        # writable for it without needing a root init container.
+        fsGroup: 999
+        runAsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      containers:
+      - name: postgres
+        image: pgvector/pgvector:pg17
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: false
+        ports:
+        - name: postgres
+          containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "products"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: pgvector-credentials
+              key: password
+        - name: PGDATA
+          # A subdirectory of the mount, so initdb never sees a non-empty volume root.
+          value: "/var/lib/postgresql/data/pgdata"
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres", "-d", "products"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "postgres", "-d", "products"]
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: pgvector-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgvector
+  labels:
+    app: pgvector
+spec:
+  type: ClusterIP
+  selector:
+    app: pgvector
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432

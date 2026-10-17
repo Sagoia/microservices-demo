@@ -19,13 +19,11 @@ FROM --platform=$BUILDPLATFORM python:3.14.7-slim@sha256:cad9a2c871761c413caa6fd
 
 FROM base AS builder
 
-RUN apt-get -qq update \
-    && apt-get install -y --no-install-recommends g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 # get packages
+# --only-binary keeps the build to prebuilt wheels: every pinned dependency publishes
+# one for linux/arm64 + cp314, so no compiler (and no apt-get) is needed here.
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --only-binary=:all: -r requirements.txt
 
 FROM base
 # Enable unbuffered logging

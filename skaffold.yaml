@@ -92,6 +92,225 @@ profiles:
   - op: add
     path: /manifests/kustomize/paths/1
     value: kustomize/components/network-policies
+# The "arm64" profile builds natively on arm64 hosts (Windows-on-Arm, Apple Silicon).
+# The Dockerfiles declare BUILDPLATFORM/TARGETARCH with amd64 defaults, and Docker does
+# not auto-populate them here, so without this the builder stages run under QEMU
+# emulation and emit amd64 binaries into arm64 images (exec format error at runtime).
+#     skaffold run -p arm64
+- name: arm64
+  patches:
+  - op: replace
+    path: /build/platforms
+    value: ["linux/arm64"]
+  - op: add
+    path: /build/artifacts/0/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/1/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/2/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/3/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/4/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/5/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/6/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/7/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/8/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/9/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/10/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  # shoppingassistantservice is built by skaffold but NOT deployed by
+  # kubernetes-manifests/kustomization.yaml, because the assistant is opt-in. Skipping
+  # the build keeps the default deployment quick; the "arm64-assistant" profile below
+  # builds and deploys it instead.
+  # Removed last so the artifact indices above are still correct when applied.
+  - op: remove
+    path: /build/artifacts/3
+# The "arm64-assistant" profile is the "arm64" profile plus the optional shopping
+# assistant: it builds all eleven images (shoppingassistantservice included) and renders
+# kustomize/overlays/shopping-assistant-local, which adds a pgvector database and turns
+# the assistant on in the frontend. Inference runs on a self-hosted Ollama server, so no
+# Google Cloud project is involved; see
+# kustomize/components/shopping-assistant-local/README.md.
+#
+# Use it on its own, not combined with "arm64" -- that profile removes the
+# shoppingassistantservice artifact.
+#     skaffold run -p arm64-assistant
+- name: arm64-assistant
+  patches:
+  - op: replace
+    path: /build/platforms
+    value: ["linux/arm64"]
+  - op: add
+    path: /build/artifacts/0/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/1/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/2/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/3/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/4/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/5/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/6/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/7/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/8/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/9/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: add
+    path: /build/artifacts/10/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+  - op: replace
+    path: /manifests/kustomize/paths/0
+    value: kustomize/overlays/shopping-assistant-local
+# The "shopping-assistant-local" profile deploys the same overlay without forcing the
+# arm64 build args, for hosts where the default platform is already correct.
+#     skaffold run -p shopping-assistant-local
+- name: shopping-assistant-local
+  patches:
+  - op: replace
+    path: /manifests/kustomize/paths/0
+    value: kustomize/overlays/shopping-assistant-local
 ---
 apiVersion: skaffold/v3
 kind: Config
@@ -120,3 +339,36 @@ profiles:
       diskSizeGb: 300
       machineType: N1_HIGHCPU_32
       timeout: 4000s
+# The "arm64" profile builds natively on arm64 hosts (Windows-on-Arm, Apple Silicon).
+# The Dockerfiles declare BUILDPLATFORM/TARGETARCH with amd64 defaults, and Docker does
+# not auto-populate them here, so without this the builder stages run under QEMU
+# emulation and emit amd64 binaries into arm64 images (exec format error at runtime).
+#     skaffold run -p arm64
+- name: arm64
+  patches:
+  - op: replace
+    path: /build/platforms
+    value: ["linux/arm64"]
+  - op: add
+    path: /build/artifacts/0/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
+# Mirrors the "arm64" profile so `skaffold run -p arm64-assistant` also builds the
+# loadgenerator natively instead of under emulation.
+- name: arm64-assistant
+  patches:
+  - op: replace
+    path: /build/platforms
+    value: ["linux/arm64"]
+  - op: add
+    path: /build/artifacts/0/docker
+    value:
+      dockerfile: Dockerfile
+      buildArgs:
+        BUILDPLATFORM: linux/arm64
+        TARGETOS: linux
+        TARGETARCH: arm64
