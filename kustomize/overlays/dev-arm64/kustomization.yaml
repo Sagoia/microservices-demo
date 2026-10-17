@@ -1,0 +1,32 @@
+# Local development overlay for slow/low-core machines (e.g. Windows-on-Arm laptops).
+#
+# The upstream manifests give the Python services a 200m CPU limit and gRPC
+# liveness/readiness probes with no initialDelaySeconds and the default 1s
+# timeout. Throttled to 0.2 of a core, those services need 20-30s before they
+# accept connections, so the liveness probe kills them at ~15s and they
+# crashloop forever. This overlay raises the CPU ceiling and adds a startupProbe
+# so the kubelet waits for boot instead of killing it.
+#
+# Used by the "arm64" profile in skaffold.yaml; kubernetes-manifests/ is untouched.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../kubernetes-manifests
+
+patches:
+  - path: slow-start-emailservice.yaml
+  - path: slow-start-recommendationservice.yaml
+
+  # Every deployment is replicas:1 with the default RollingUpdate maxSurge 25%,
+  # which rounds UP to 1 - so a redeploy briefly runs two pods per service. On a
+  # single 6-core node that doubles CPU demand, every service then boots too
+  # slowly for its probe window, the rollout deadlocks and the duplicate pods
+  # become permanent. Recreate retires the old pod first: no surge, no contention.
+  - target:
+      kind: Deployment
+    patch: |
+      - op: add
+        path: /spec/strategy
+        value:
+          type: Recreate

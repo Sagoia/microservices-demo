@@ -1,0 +1,30 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# pgvector and shoppingassistantservice only -- nothing from kubernetes-manifests.
+#
+# Use this against a cluster where the base app is already running and must not be
+# restarted: applying the full overlay would roll every deployment, which on a
+# single-node cluster means a visible outage for whoever is browsing the storefront.
+#
+#     kubectl apply -k kustomize/overlays/shopping-assistant-only
+#
+# The frontend is left alone, so ENABLE_ASSISTANT is not set by this overlay; set it
+# separately when you want the assistant visible in the UI:
+#
+#     kubectl set env deployment/frontend ENABLE_ASSISTANT=true
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+components:
+- ../../components/shopping-assistant-local

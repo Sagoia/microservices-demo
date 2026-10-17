@@ -102,6 +102,12 @@ profiles:
   - op: replace
     path: /build/platforms
     value: ["linux/arm64"]
+  # Deploy through the dev overlay instead of kubernetes-manifests directly: it
+  # raises the Python services' CPU ceiling and adds a startupProbe so slow boots
+  # on low-core arm64 machines are not killed by the liveness probe.
+  - op: replace
+    path: /manifests/kustomize/paths/0
+    value: kustomize/overlays/dev-arm64
   - op: add
     path: /build/artifacts/0/docker
     value:

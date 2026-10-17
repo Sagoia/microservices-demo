@@ -12,15 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The default deployment plus the self-hosted shopping assistant (pgvector + a remote
+# The dev-arm64 overlay plus the self-hosted shopping assistant (pgvector + a remote
 # Ollama server). Kept as its own overlay so kubernetes-manifests/ stays unchanged and
 # the assistant is still opt-in:
 #
 #     kubectl apply -k kustomize/overlays/shopping-assistant-local
 #     skaffold run -p arm64-assistant
+#
+# It bases on dev-arm64 rather than kubernetes-manifests directly so the single-node
+# fixes come with it: Recreate rollouts (the default RollingUpdate surge double-schedules
+# every service and deadlocks on one node) and the slow-start probes for the Python
+# services. Use kustomize/overlays/shopping-assistant-only for just the two new
+# workloads, without touching the base app.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- ../../../kubernetes-manifests
+- ../dev-arm64
 components:
 - ../../components/shopping-assistant-local
+patches:
+- patch: |-
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: frontend
+    spec:
+      template:
+        spec:
+          containers:
+          - name: server
+            env:
+            - name: ENABLE_ASSISTANT
+              value: "true"

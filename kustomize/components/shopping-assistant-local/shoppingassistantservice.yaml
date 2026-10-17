@@ -23,6 +23,11 @@ spec:
   # something (a skaffold teardown, a manual scale) left it at zero replicas: kubectl
   # apply cannot reset a field the manifest does not carry.
   replicas: 1
+  strategy:
+    # Single-node clusters cannot afford the default RollingUpdate surge: maxSurge 25%
+    # rounds up to 1, so a redeploy briefly runs two of these langchain processes and
+    # neither finishes booting inside its probe window.
+    type: Recreate
   selector:
     matchLabels:
       app: shoppingassistantservice
@@ -84,26 +89,36 @@ spec:
               key: password
         - name: PGVECTOR_COLLECTION
           value: "products"
+        startupProbe:
+          # Importing langchain, sqlalchemy and the client libraries takes a while on a
+          # throttled core. The kubelet waits for this to pass before the liveness probe
+          # can kill anything, so a slow boot is not mistaken for a hung process.
+          httpGet:
+            path: /healthz
+            port: 8080
+          periodSeconds: 5
+          failureThreshold: 36   # allow up to ~3min to finish booting
         readinessProbe:
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 10
           periodSeconds: 10
+          timeoutSeconds: 5
         livenessProbe:
           httpGet:
             path: /healthz
             port: 8080
-          initialDelaySeconds: 30
           periodSeconds: 20
+          timeoutSeconds: 5
         resources:
           requests:
             cpu: 100m
             memory: 256Mi
           limits:
             # The langchain/sqlalchemy import graph alone needs more than the 128Mi the
-            # upstream manifest allowed.
-            cpu: 500m
+            # upstream manifest allowed, and a 200m-style ceiling stretches that import
+            # past any sensible probe budget.
+            cpu: "1"
             memory: 768Mi
 ---
 apiVersion: v1

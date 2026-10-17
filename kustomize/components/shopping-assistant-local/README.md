@@ -49,6 +49,19 @@ Or against images you already have:
 kubectl apply -k kustomize/overlays/shopping-assistant-local
 ```
 
+That overlay bases on `kustomize/overlays/dev-arm64`, so it also carries the
+single-node fixes: `Recreate` rollouts (the default `RollingUpdate` surge rounds up to
+one extra pod per service, which double-schedules the whole app on one node and
+deadlocks) and slow-start probes for the Python services.
+
+If the base app is already running and should not be restarted, deploy only the two new
+workloads:
+
+```bash
+kubectl apply -k kustomize/overlays/shopping-assistant-only
+kubectl set env deployment/frontend ENABLE_ASSISTANT=true
+```
+
 Then load the catalog into pgvector:
 
 ```bash

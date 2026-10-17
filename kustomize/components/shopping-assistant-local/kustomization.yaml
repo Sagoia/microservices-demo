@@ -12,22 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Just the two workloads the assistant needs. Turning the feature on in the frontend is
+# left to the overlay, so this component can also be applied on its own -- against a
+# cluster where the base app is already running and should not be restarted. See
+# kustomize/overlays/shopping-assistant-only.
 apiVersion: kustomize.config.k8s.io/v1alpha1
 kind: Component
 resources:
 - pgvector.yaml
 - shoppingassistantservice.yaml
-patches:
-- patch: |-
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      name: frontend
-    spec:
-      template:
-        spec:
-          containers:
-          - name: server
-            env:
-            - name: ENABLE_ASSISTANT
-              value: "true"

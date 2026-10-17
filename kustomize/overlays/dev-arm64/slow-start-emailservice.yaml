@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: emailservice
+spec:
+  template:
+    spec:
+      containers:
+        - name: server
+          resources:
+            limits:
+              # 200m throttles Python+grpc startup past the probe budget.
+              cpu: "1"
+          startupProbe:
+            grpc:
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 36   # allow up to ~3min to finish booting
+          livenessProbe:
+            grpc:
+              port: 8080
+            periodSeconds: 15
+            timeoutSeconds: 5
+          readinessProbe:
+            grpc:
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
